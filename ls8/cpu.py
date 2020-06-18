@@ -20,6 +20,14 @@ PUSH = 0b01000101
 # Subroutine stuff
 CALL = 0b01010000
 RET = 0b00010001
+# Sprint
+CMP = 0b10100111
+JMP = 0b01010100
+JEQ = 0b01010101
+JNE = 0b01010110
+LD = 0b10000011
+ST = 0b10000100
+PRA = 0b01001000
 
 class CPU:
     """Main CPU class."""
@@ -39,12 +47,20 @@ class CPU:
             POP: lambda a, _: self.pop_stack(a),
             PUSH: lambda a, _: self.push_stack(a),
             CALL: lambda a, _: self.call(a),
-            RET: lambda *_args: self.returny()
+            RET: lambda *_args: self.returny(),
+            CMP: lambda a, b: self.alu('CMP', a, b),
+            JMP: lambda a, _: self.set_pc(a),
+            JEQ: lambda a, b: self.comparator('eq', a),
+            JNE: lambda a, b: self.comparator('ne', a),
+            LD: lambda a, b: self.ld(a, b),
+            ST: lambda a, b: self.st(a, b),
+            PRA: lambda a, b: print(chr(self.reg[a]))
         }
         self.ram = [0] * 256
         self.reg = [0] * 8
         self.pc = 0
         self.sp = 7
+        self.fl = 0
         
 
     def load(self, program):
@@ -101,6 +117,14 @@ class CPU:
         try:
             if op in math_operations :
                 math_operations[op](reg_a, reg_b)
+            elif op == 'CMP':
+                self.fl = 0b00000000
+                if self.reg[reg_a] == self.reg[reg_b]:
+                    self.FL = 0b00000001
+                elif self.reg[reg_a] < self.reg[reg_b]:
+                    self.FL = 0b00000100
+                else:
+                    self.FL = 0b00000010
         except:    
             raise Exception("Math operation not found")
 
@@ -153,6 +177,32 @@ class CPU:
     def returny(self):
         self.pc = self.ram_read(self.reg[self.sp])
         self.reg[self.sp] +=1
+    
+    def set_pc(self, reg_a):
+        self.pc = self.reg[reg_a]
+    
+    def comparator(self, test, reg_a):
+        masks = {
+            'eq': 0b1,
+            'ne': 0b1,
+            'ge': 0b11,
+            'gt': 0b10,
+            'le': 0b101,
+            'lt': 0b100,
+        }
+        flag = self.fl & masks[test]
+        if flag and test != 'ne':
+            self.pc = self.reg[reg_a]
+        elif test == 'ne' and flag == 0:
+            self.pc = self.reg[reg_a]
+        else:
+            self.pc += 2
+
+    def ld(self, reg_a, reg_b):
+        self.reg[reg_a] = self.ram_read(self.reg[reg_b])
+
+    def st(self, reg_a, reg_b):
+        self.ram_write(self.reg[reg_a], self.reg[reg_b])
 
     def run(self):
         """Run the CPU."""
@@ -173,4 +223,5 @@ class CPU:
                 running = False
             else:
                 print('unknown command')
+                print(bin(IR))
                 running = False
