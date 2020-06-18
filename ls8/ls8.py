@@ -15,6 +15,6 @@ try:
         cpu.load(program)
         cpu.run()
     else:
-        print('Tha program does not exist... yet!')
+        print('That program does not exist... yet!')
 except IndexError:
     print('You must put in a program name')
