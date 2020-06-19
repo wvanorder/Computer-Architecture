@@ -50,8 +50,8 @@ class CPU:
             RET: lambda *_args: self.returny(),
             CMP: lambda a, b: self.alu('CMP', a, b),
             JMP: lambda a, _: self.set_pc(a),
-            JEQ: lambda a, b: self.comparator('eq', a),
-            JNE: lambda a, b: self.comparator('ne', a),
+            JEQ: lambda a, b: self.comparator('equal', a),
+            JNE: lambda a, b: self.comparator('not_equal', a),
             LD: lambda a, b: self.ld(a, b),
             ST: lambda a, b: self.st(a, b),
             PRA: lambda a, b: print(chr(self.reg[a]))
@@ -182,15 +182,11 @@ class CPU:
         self.pc = self.reg[reg_a]
     
     def comparator(self, test, reg_a):
-        masks = {
-            'eq': 0b1,
-            'ne': 0b1,
-            'ge': 0b11,
-            'gt': 0b10,
-            'le': 0b101,
-            'lt': 0b100,
+        options = {
+            'equal': 0b1,
+            'not_equal': 0b1,
         }
-        flag = self.fl & masks[test]
+        flag = self.fl & options[test]
         if flag and test != 'ne':
             self.pc = self.reg[reg_a]
         elif test == 'ne' and flag == 0:
